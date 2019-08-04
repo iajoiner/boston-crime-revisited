@@ -1,0 +1,13 @@
+<!doctype html>
+<html lang="en">
+<title>Predict Crime in Boston</title>
+<body>
+<h1>Predict Crime in Boston</h1>
+Date: {{date['month']}}/{{date['day']}}/{{date['year']}}<br/>
+{% for i in range(length)%}
+{{crime_list[i]}}: {{res[crime_list[i]]}}<br/>
+{% endfor %}
+
+Designed by <a href = "https://www.linkedin.com/in/yingzhou474/">Ying Zhou</a>
+</body>
+</html>
