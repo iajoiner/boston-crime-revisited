@@ -203,6 +203,9 @@ def make_data(ser_id = 'MAURN', crime_list = ['AGGRAVATED ASSAULT','AUTO THEFT',
         res['PRCP'] = edf['PRCP'] + ndw['PRCP']
         res['SNOW'] = edf['SNOW'] + ndw['SNOW']
         res['AWND'] = ((24 - edf['first_hour']) * edf['AWND'] + (1 + ndw['last_hour']) * ndw['AWND']) / 24
+    #Temporarily get rid of SNOW and PRCP due to lack of data
+    res.pop('SNOW',None)
+    res.pop('PRCP',None)
     #Now process year and dayw
     now = datetime.datetime.now()
     local_month = now.month
@@ -237,8 +240,6 @@ def make_data(ser_id = 'MAURN', crime_list = ['AGGRAVATED ASSAULT','AUTO THEFT',
     df_final['crime'] = pd.Series(1 * crime_list)
     #Time to get dummies
     col_list = ['AWND',
- 'PRCP',
- 'SNOW',
  'TMAX',
  'TMIN',
  ser_id,
@@ -329,8 +330,8 @@ def make_data(ser_id = 'MAURN', crime_list = ['AGGRAVATED ASSAULT','AUTO THEFT',
  'HOLIDAY_Thanksgiving Eve','HOLIDAY_None']
     df_final['TMAX'] = df_final['TMAX'].astype('float64')
     df_final['TMIN'] = df_final['TMIN'].astype('float64')
-    df_final['PRCP'] = df_final['PRCP'].astype('float64')
-    df_final['SNOW'] = df_final['SNOW'].astype('float64')
+    #df_final['PRCP'] = df_final['PRCP'].astype('float64')
+    #df_final['SNOW'] = df_final['SNOW'].astype('float64')
     df_final['AWND'] = df_final['AWND'].astype('float64')
     df_final[ser_id] = df_final[ser_id].astype('float64')
     df_final_dummies = pd.get_dummies(df_final)
@@ -341,17 +342,19 @@ def make_data(ser_id = 'MAURN', crime_list = ['AGGRAVATED ASSAULT','AUTO THEFT',
             df_final_dummies[col] = np.zeros(num_rows)
     df_final_dummies = df_final_dummies[col_list]    
     return df_final_dummies, datetime.datetime(res['year'], res['month'], res['day'])
-def predict_today_crimes(crime_list = ['AGGRAVATED ASSAULT','AUTO THEFT','COMMERCIAL BURGLARY','HOMICIDE','LARCENY','OTHER BURGLARY','RESIDENTIAL BURGLARY','ROBBERY']):
+def predict_today_crimes(crime_list = ['AGGRAVATED ASSAULT','AUTO THEFT','COMMERCIAL BURGLARY','HOMICIDE','LARCENY','OTHER BURGLARY','RESIDENTIAL BURGLARY','ROBBERY'], path = '/home/yingzhou474/mysite/'):
     final_X_df, date = make_data()
     final_X = final_X_df.values
-    lgbm_final = pickle.load(open('/Users/CatLover/Documents/DataScience/BostonCrime/lgbm_reg.p','rb'))
-    scaler_final = pickle.load(open('/Users/CatLover/Documents/DataScience/BostonCrime/lgbm_scaler.p','rb'))
+    lgbm_final = pickle.load(open(path + 'lgbm_reg.p','rb'))
+    scaler_final = pickle.load(open(path + 'lgbm_scaler.p','rb'))
     final_X_scaled = scaler_final.transform(final_X)
     final_y = lgbm_final.predict(final_X_scaled, num_iteration=lgbm_final.best_iteration_)
     crime_types = len(crime_list)
     prediction_dic = {}
     for i in range(crime_types):
-        prediction_dic[crime_list[i]] = final_y[i]
+        if final_y[i] < 0:#The amount of crimes should never be negative
+            final_y[i] = 0.00
+        prediction_dic[crime_list[i]] = round(final_y[i],2)
     return prediction_dic, date
 if __name__ == '__main__':
-    print(predict_today_crimes())
+    print(predict_today_crimes(path = '/Users/CatLover/Documents/DataScience/BostonCrime/production/'))
