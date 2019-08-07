@@ -1,4 +1,3 @@
-
 # A very simple Flask Hello World app for you to get started with...
 
 from flask import Flask, render_template
@@ -16,5 +15,3 @@ def hello_world():
     res, date = predict.predict_today_crimes()
     length = len(crime_list)
     return render_template('main.html', date = date, res = res, crime_list = crime_list, length = length)
-if __name__ == "__main__":
-    app.run(host="0.0.0.0",port=int("5003"),debug=True)
